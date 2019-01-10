@@ -29,7 +29,8 @@ class Sidecarparser(object):
             self._sidecar = load_json(sidecar)
             self._sidecar["SidecarFilename"] = os.path.basename(sidecar)
             criteria = self.descriptions[index]["criteria"]
-            if criteria and self._respect(criteria):
+            exclude = self.descriptions[index].get("exclude", {})
+            if criteria and self._respect(criteria, exclude):
                 graph[sidecar].append(index)
         return graph
 
@@ -93,17 +94,33 @@ class Sidecarparser(object):
         return acq
 
 
-    def _respect(self, criteria):
+    def _respect(self, criteria, exclude={}):
         rsl = []
-        for tag, pattern in iteritems(criteria):
+        # construct triples of tag, pattern, and truth value
+        criterion_triples = []
+        for key, value in iteritems(criteria):
+            if isinstance(value, list):
+                for v in value:
+                    criterion_triples.append((key, v, True))
+            else:
+                criterion_triples.append((key, value, True))
+        for key, value in iteritems(exclude):
+            if key not in self._sidecar.keys():
+                continue
+            if isinstance(value, list):
+                for v in value:
+                    criterion_triples.append((key, v, False))
+            else:
+                criterion_triples.append((key, value, False))
+        for tag, pattern, truth_value in criterion_triples:
             name = self._sidecar.get(tag)
             pat = str(pattern)
             if isinstance(name, list):
                 subRsl = []
                 for subName in name:
                     subRsl.append(fnmatch.fnmatch(str(subName), pat))
-                rsl.append(any(subRsl))
+                rsl.append(any(subRsl) == truth_value)
             else:
-                rsl.append(fnmatch.fnmatch(str(name), pat))
+                rsl.append(fnmatch.fnmatch(str(name), pat) == truth_value)
         return all(rsl)
 

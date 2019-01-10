@@ -76,6 +76,17 @@ It is recommended to use an editor with syntax highlighting to build a correct J
             "criteria": {
                 "SidecarFilename": "006*"
             }
+        },
+        {
+            "dataType": "fmap",
+            "modalityLabel": "magnitude1",
+            "criteria": {
+                "SidecarFilename": "*Diffusion_FM*",
+                "ImageType": ["M", "ND"]
+            },
+            "exclude": {
+                "EchoNumber": 2
+            }
         }
     ]
 }
@@ -107,9 +118,20 @@ The pattern matching is shell-style. It's possible to use wildcard `*`, single c
 
 For example, in the first description, the pattern `*T2*` will be compared to the value of `SeriesDescription` of a sidecar. `AXIAL_T2_SPACE` will be a match, `AXIAL_T1` won't.
 
+Sometimes, for fields such as `ImageType`, *the value in the sidecar* is a list instead of a string. In this case, the criteria is satified if it matches any list element.
+
+If a list is provided *as a criteria*, all list elements must have a match in the corresponding sidecar value.  This is useful for matching multiple elements of a list.
+For example, in the third description, `"ImageType": ["M", "ND"]` will match a diffusion field map only if both "M" and "ND" are present in the `ImageType` field of the sidecar.
+
 `dcm2bids` create a `SidecarFilename` key if you prefer to also match with the filename of the sidecar.
 
 You can enter several criteria. **All criteria must match** for a description to be link to a sidecar.
+
+#### `exclude`
+
+dcm2bids will check the contents of the sidecar against the `exclude` dictionary, much in the same way as `criteria`. If any one is matched, it will exclude the file. `exclude` will ignore keys it does not encounter in the sidecar. 
+
+In the third description above, `"EchoNumber": 2` distinguishes the second magnitude image from the first in a diffusion field map.
 
 ## Output
 
@@ -175,3 +197,4 @@ Other tools to create [BIDS][bids] datasets :
 [link-heudiconv]: https://github.com/nipy/heudiconv
 [link-bidskit]: https://github.com/jmtyszka/bidskit
 [link-dac2bids]: https://github.com/dangom/dac2bids
+
